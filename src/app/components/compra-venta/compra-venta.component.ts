@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 interface ParDivisa {
@@ -20,7 +20,7 @@ type Divisa = 'USD' | 'EUR';
   templateUrl: './compra-venta.component.html',
   styleUrls: ['./compra-venta.component.css']
 })
-export class CompraVentaComponent implements OnInit {
+export class CompraVentaComponent implements OnInit, OnDestroy {
   pares: ParDivisa[] = [];
   paresDivisas: ParDivisa[] = [];
 
@@ -51,7 +51,10 @@ export class CompraVentaComponent implements OnInit {
   mostrarConfirmacionUSD: boolean = false;
   mostrarConfirmacionEUR: boolean = false;
 
-  // Tasas
+  mostrarEntregoUSD: boolean = false;
+  mostrarEntregoEUR: boolean = false;
+
+  // Tasas en tiempo real (modificadas por el simulador)
   tasaVentaUSD = 18.7019;
   tasaCompraUSD = 18.8249;
   tasaVentaEUR = 21.7793;
@@ -66,12 +69,23 @@ export class CompraVentaComponent implements OnInit {
   tasaCompraEUREntero = '';
   tasaCompraEURDec = '';
 
+  private simuladorInterval: any; // <-- Intervalo para simular
+
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
     this.fechaActual = this.obtenerFechaActual();
     this.obtenerParesDivisas();
     this.procesarTasas();
+
+    // Simulación de fluctuación de precios
+    this.simuladorInterval = setInterval(() => {
+      this.simularPreciosDivisas();
+    }, 3000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.simuladorInterval) clearInterval(this.simuladorInterval);
   }
 
   procesarTasas() {
@@ -95,6 +109,36 @@ export class CompraVentaComponent implements OnInit {
     this.tasaVentaEURDec = eurVenta.dec;
     this.tasaCompraEUREntero = eurCompra.entero;
     this.tasaCompraEURDec = eurCompra.dec;
+  }
+
+  // Simula que los precios suben o bajan ligeramente cada 3 segundos
+  simularPreciosDivisas() {
+    // Fluctuación aleatoria entre -0.0200 y +0.0200
+    this.tasaVentaUSD = this.ajustarValor(this.tasaVentaUSD, 0.02);
+    this.tasaCompraUSD = this.ajustarValor(this.tasaCompraUSD, 0.02);
+    this.tasaVentaEUR = this.ajustarValor(this.tasaVentaEUR, 0.02);
+    this.tasaCompraEUR = this.ajustarValor(this.tasaCompraEUR, 0.02);
+
+    this.procesarTasas();
+
+    // Si ya cotizaste, el valor de entrego debe recalcularse automáticamente
+    if (this.mostrarEntregoUSD && this.reciboUSD && this.tipoOperacionUSD) {
+      const monto = parseFloat(this.reciboUSD || '0');
+      this.entregoUSD = monto > 0 ? this.obtenerMontoEntregado(monto, 'USD') : '00.00';
+    }
+    if (this.mostrarEntregoEUR && this.reciboEUR && this.tipoOperacionEUR) {
+      const monto = parseFloat(this.reciboEUR || '0');
+      this.entregoEUR = monto > 0 ? this.obtenerMontoEntregado(monto, 'EUR') : '00.00';
+    }
+  }
+
+  // Utilidad para variar un precio con un delta pequeño
+  ajustarValor(valor: number, delta: number): number {
+    const cambio = (Math.random() - 0.5) * 2 * delta;
+    let nuevo = valor + cambio;
+    // Limita a 4 decimales positivos y nunca menor a 1
+    if (nuevo < 1) nuevo = 1 + Math.random() * 0.1;
+    return Number(nuevo.toFixed(4));
   }
 
   obtenerFechaActual(): string {
@@ -131,6 +175,7 @@ export class CompraVentaComponent implements OnInit {
     if (divisa === 'USD') {
       const mismaSeleccion = this.tipoOperacionUSD === operacion;
       this.tipoOperacionUSD = mismaSeleccion ? null : operacion;
+      this.mostrarEntregoUSD = false;
       if (mismaSeleccion || operacion === 'compra' || operacion === 'venta') {
         this.reciboUSD = '';
         this.entregoUSD = '';
@@ -141,6 +186,7 @@ export class CompraVentaComponent implements OnInit {
     if (divisa === 'EUR') {
       const mismaSeleccion = this.tipoOperacionEUR === operacion;
       this.tipoOperacionEUR = mismaSeleccion ? null : operacion;
+      this.mostrarEntregoEUR = false;
       if (mismaSeleccion || operacion === 'compra' || operacion === 'venta') {
         this.reciboEUR = '';
         this.entregoEUR = '';
@@ -187,12 +233,14 @@ export class CompraVentaComponent implements OnInit {
 
     if (divisa === 'USD') {
       this.reciboUSD = raw;
-      this.entregoUSD = this.obtenerMontoEntregado(numero, 'USD');
+      this.entregoUSD = '';
+      this.mostrarEntregoUSD = false;
     }
 
     if (divisa === 'EUR') {
       this.reciboEUR = raw;
-      this.entregoEUR = this.obtenerMontoEntregado(numero, 'EUR');
+      this.entregoEUR = '';
+      this.mostrarEntregoEUR = false;
     }
   }
 
@@ -203,8 +251,16 @@ export class CompraVentaComponent implements OnInit {
 
   limpiarInput(event: any, divisa: Divisa): void {
     event.target.value = '';
-    if (divisa === 'USD') this.reciboUSD = '';
-    if (divisa === 'EUR') this.reciboEUR = '';
+    if (divisa === 'USD') {
+      this.reciboUSD = '';
+      this.entregoUSD = '';
+      this.mostrarEntregoUSD = false;
+    }
+    if (divisa === 'EUR') {
+      this.reciboEUR = '';
+      this.entregoEUR = '';
+      this.mostrarEntregoEUR = false;
+    }
   }
 
   activarFocus(divisa: Divisa): void {
@@ -272,8 +328,18 @@ export class CompraVentaComponent implements OnInit {
   }
 
   cotizar(divisa: Divisa): void {
-    if (divisa === 'USD') this.mostrarConfirmacionUSD = true;
-    if (divisa === 'EUR') this.mostrarConfirmacionEUR = true;
+    if (divisa === 'USD') {
+      const monto = parseFloat(this.reciboUSD || '0');
+      this.entregoUSD = monto > 0 ? this.obtenerMontoEntregado(monto, 'USD') : '00.00';
+      this.mostrarConfirmacionUSD = true;
+      this.mostrarEntregoUSD = true;
+    }
+    if (divisa === 'EUR') {
+      const monto = parseFloat(this.reciboEUR || '0');
+      this.entregoEUR = monto > 0 ? this.obtenerMontoEntregado(monto, 'EUR') : '00.00';
+      this.mostrarConfirmacionEUR = true;
+      this.mostrarEntregoEUR = true;
+    }
   }
 
   rechazarCotizacion(divisa: Divisa): void {
@@ -282,12 +348,14 @@ export class CompraVentaComponent implements OnInit {
       this.entregoUSD = '';
       this.tipoOperacionUSD = null;
       this.mostrarConfirmacionUSD = false;
+      this.mostrarEntregoUSD = false;
     }
     if (divisa === 'EUR') {
       this.reciboEUR = '';
       this.entregoEUR = '';
       this.tipoOperacionEUR = null;
       this.mostrarConfirmacionEUR = false;
+      this.mostrarEntregoEUR = false;
     }
   }
 
