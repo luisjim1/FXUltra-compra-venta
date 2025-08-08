@@ -69,7 +69,7 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
   tasaCompraEUREntero = '';
   tasaCompraEURDec = '';
 
-  private simuladorInterval: any; // <-- Intervalo para simular
+  private simuladorInterval: any;
 
   constructor(private http: HttpClient) {}
 
@@ -78,7 +78,7 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
     this.obtenerParesDivisas();
     this.procesarTasas();
 
-    // Simulación de fluctuación de precios
+    // Simulación de fluctuación de divisa
     this.simuladorInterval = setInterval(() => {
       this.simularPreciosDivisas();
     }, 3000);
@@ -113,30 +113,28 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
 
   // Simula que los precios suben o bajan ligeramente cada 3 segundos
   simularPreciosDivisas() {
-    // Fluctuación aleatoria entre -0.0200 y +0.0200
-    this.tasaVentaUSD = this.ajustarValor(this.tasaVentaUSD, 0.02);
-    this.tasaCompraUSD = this.ajustarValor(this.tasaCompraUSD, 0.02);
-    this.tasaVentaEUR = this.ajustarValor(this.tasaVentaEUR, 0.02);
-    this.tasaCompraEUR = this.ajustarValor(this.tasaCompraEUR, 0.02);
+    // Fluctuación aleatoria
+    this.tasaVentaUSD = this.ajustarValor(this.tasaVentaUSD, 0.002);
+    this.tasaCompraUSD = this.ajustarValor(this.tasaCompraUSD, 0.002);
+    this.tasaVentaEUR = this.ajustarValor(this.tasaVentaEUR, 0.002);
+    this.tasaCompraEUR = this.ajustarValor(this.tasaCompraEUR, 0.002);
 
     this.procesarTasas();
 
-    // Si ya cotizaste, el valor de entrego debe recalcularse automáticamente
     if (this.mostrarEntregoUSD && this.reciboUSD && this.tipoOperacionUSD) {
-      const monto = parseFloat(this.reciboUSD || '0');
+      const monto = parseFloat((this.reciboUSD || '0').replace(/,/g, ''));
       this.entregoUSD = monto > 0 ? this.obtenerMontoEntregado(monto, 'USD') : '00.00';
     }
     if (this.mostrarEntregoEUR && this.reciboEUR && this.tipoOperacionEUR) {
-      const monto = parseFloat(this.reciboEUR || '0');
+      const monto = parseFloat((this.reciboEUR || '0').replace(/,/g, ''));
       this.entregoEUR = monto > 0 ? this.obtenerMontoEntregado(monto, 'EUR') : '00.00';
     }
   }
 
-  // Utilidad para variar un precio con un delta pequeño
   ajustarValor(valor: number, delta: number): number {
     const cambio = (Math.random() - 0.5) * 2 * delta;
     let nuevo = valor + cambio;
-    // Limita a 4 decimales positivos y nunca menor a 1
+
     if (nuevo < 1) nuevo = 1 + Math.random() * 0.1;
     return Number(nuevo.toFixed(4));
   }
@@ -294,7 +292,7 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
       }
     }
 
-    return this.formatearInput(resultado.toFixed(2));
+    return resultado.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
   parDeshabilitado(par: string): boolean {
@@ -329,13 +327,13 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
 
   cotizar(divisa: Divisa): void {
     if (divisa === 'USD') {
-      const monto = parseFloat(this.reciboUSD || '0');
+      const monto = parseFloat((this.reciboUSD || '0').replace(/,/g, ''));
       this.entregoUSD = monto > 0 ? this.obtenerMontoEntregado(monto, 'USD') : '00.00';
       this.mostrarConfirmacionUSD = true;
       this.mostrarEntregoUSD = true;
     }
     if (divisa === 'EUR') {
-      const monto = parseFloat(this.reciboEUR || '0');
+      const monto = parseFloat((this.reciboEUR || '0').replace(/,/g, ''));
       this.entregoEUR = monto > 0 ? this.obtenerMontoEntregado(monto, 'EUR') : '00.00';
       this.mostrarConfirmacionEUR = true;
       this.mostrarEntregoEUR = true;
