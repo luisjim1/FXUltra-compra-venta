@@ -2,187 +2,193 @@
   <h5 class="titulo-seccion">Compra venta de divisas</h5>
   <div class="row paneles-wrapper">
 
-   <!-- Panel USD -->
-<div class="panel">
-  <div class="barra-superior">
-    <div class="tabs-container px-3">
-      <a class="nav-link active divisa-usd" href="#">USD</a>
-      <div class="separador-tab"></div>
-      <a class="nav-link divisa-mxn" href="#">MXN</a>
+    <!-- Panel USD -->
+    <div class="panel">
+      <div class="barra-superior">
+        <div class="tabs-container px-3">
+          <a class="nav-link active divisa-usd" href="#">USD</a>
+          <div class="separador-tab"></div>
+          <a class="nav-link divisa-mxn" href="#">MXN</a>
+        </div>
+      </div>
+      <div class="selector-tipo-operacion">
+        <div class="opcion-selector" [class.active]="tipoOperacionUSD === 'venta'" (click)="seleccionarOperacion('venta', 'USD')">
+          <div class="label-operacion" [class.texto-solo]="tipoOperacionUSD === 'compra'">
+            Yo vendo <strong>USD</strong>
+          </div>
+          <div class="valor-operacion" *ngIf="tipoOperacionUSD !== 'compra'">
+            <span class="flecha down"></span>
+            <span class="valor-int">{{ tasaVentaUSDEntero }}</span>
+            <span class="valor-dec">{{ tasaVentaUSDDec }}</span>
+          </div>
+        </div>
+        <div class="opcion-selector" [class.active]="tipoOperacionUSD === 'compra'" (click)="seleccionarOperacion('compra', 'USD')">
+          <div class="label-operacion" [class.texto-solo]="tipoOperacionUSD === 'venta'">
+            Yo compro <strong>USD</strong>
+          </div>
+          <div class="valor-operacion" *ngIf="tipoOperacionUSD !== 'venta'">
+            <span class="valor-int">{{ tasaCompraUSDEntero }}</span>
+            <span class="valor-dec">{{ tasaCompraUSDDec }}</span>
+            <span class="flecha up"></span>
+          </div>
+        </div>
+      </div>
+      <div class="fecha-op">Fecha de Operación {{ fechaActual }}</div>
+      <div class="px-3 contenido-panel">
+        <div class="grupo-horizontal">
+          <label class="etiqueta-rv" [class.focus]="selectFocus.USD">Quiero liquidar</label>
+          <select class="form-control entrada-rv" [disabled]="!tipoOperacionUSD" (focus)="activarFocusSelect('USD')" (blur)="desactivarFocusSelect('USD')">
+            <option *ngFor="let fecha of fechasUSD">{{ fecha.descripcion }}</option>
+          </select>
+        </div>
+        <div class="grupo-horizontal">
+          <label class="etiqueta-rv" [class.focus]="inputFocus.USD">Recibo</label>
+          <div class="input-moneda" [class.focused]="inputFocus.USD" [class.error]="errorMontoUSD">
+            <input
+              type="text"
+              class="entrada-rv"
+              placeholder="00.00"
+              inputmode="decimal"
+              [disabled]="tipoOperacionUSD !== 'compra'"
+              [value]="reciboUSD"
+              (focus)="limpiarInput($event, 'USD'); activarFocus('USD')"
+              (input)="actualizarRecibo('USD', $event)"
+              (blur)="blurInput('USD')"
+              (keypress)="validarInputNumerico($event)"
+            />
+            <span class="moneda"><strong>USD</strong></span>
+          </div>
+        </div>
+        <div *ngIf="errorMontoUSD" class="mensaje-error">
+          El monto <strong>supera el límite máximo</strong> por operación
+        </div>
+        <div class="grupo-horizontal">
+          <label class="etiqueta-rv">Entrego</label>
+          <div class="input-moneda" [ngClass]="{'bg-gris': esInputGris('USD', 'entrego')}">
+            <input
+              type="text"
+              class="entrada-rv"
+              inputmode="decimal"
+              [disabled]="true"
+              [value]="mostrarEntregoUSD ? entregoUSD : '00.00'"
+            />
+            <span class="moneda"><strong>MXN</strong></span>
+          </div>
+        </div>
+      </div>
+      <div class="acciones-panel">
+        <button *ngIf="reciboUSD && !mostrarConfirmacionUSD" class="btn-cotizar" (click)="cotizar('USD')">Cotizar</button>
+        <div *ngIf="mostrarConfirmacionUSD" class="grupo-confirmacion">
+          <button class="btn-rechazar" (click)="rechazarCotizacion('USD')">Rechazar</button>
+          <button class="btn-pactar">Pactar compra</button>
+        </div>
+      </div>
     </div>
-  </div>
-  <div class="selector-tipo-operacion">
-    <div class="opcion-selector" [class.active]="tipoOperacionUSD === 'venta'" (click)="seleccionarOperacion('venta', 'USD')">
-      <div class="label-operacion" [class.texto-solo]="tipoOperacionUSD === 'compra'">
-        Yo vendo <strong>USD</strong>
+
+    <!-- Panel EUR -->
+    <div class="panel">
+      <div class="barra-superior">
+        <div class="tabs-container px-3">
+          <a class="nav-link active divisa-usd" href="#">EUR</a>
+          <div class="separador-tab"></div>
+          <a class="nav-link divisa-mxn" href="#">MXN</a>
+        </div>
       </div>
-      <div class="valor-operacion" *ngIf="tipoOperacionUSD !== 'compra'" [class.blanco]="tipoOperacionUSD === 'venta'">
-        <span class="flecha down"></span>
-        <span class="valor-int">{{ tasaVentaUSDEntero }}</span>
-        <span class="valor-dec">{{ tasaVentaUSDDec }}</span>
+      <div class="selector-tipo-operacion">
+        <div class="opcion-selector" [class.active]="tipoOperacionEUR === 'venta'" (click)="seleccionarOperacion('venta', 'EUR')">
+          <div class="label-operacion" [class.texto-solo]="tipoOperacionEUR === 'compra'">
+            Yo vendo <strong>EUR</strong>
+          </div>
+          <div class="valor-operacion" *ngIf="tipoOperacionEUR !== 'compra'">
+            <span class="flecha down"></span>
+            <span class="valor-int">{{ tasaVentaEUREntero }}</span>
+            <span class="valor-dec">{{ tasaVentaEURDec }}</span>
+          </div>
+        </div>
+        <div class="opcion-selector" [class.active]="tipoOperacionEUR === 'compra'" (click)="seleccionarOperacion('compra', 'EUR')">
+          <div class="label-operacion" [class.texto-solo]="tipoOperacionEUR === 'venta'">
+            Yo compro <strong>EUR</strong>
+          </div>
+          <div class="valor-operacion" *ngIf="tipoOperacionEUR !== 'venta'">
+            <span class="valor-int">{{ tasaCompraEUREntero }}</span>
+            <span class="valor-dec">{{ tasaCompraEURDec }}</span>
+            <span class="flecha up"></span>
+          </div>
+        </div>
+      </div>
+      <div class="fecha-op">Fecha de Operación {{ fechaActual }}</div>
+      <div class="px-3 contenido-panel">
+        <div class="grupo-horizontal">
+          <label class="etiqueta-rv" [class.focus]="selectFocus.EUR">Quiero liquidar</label>
+          <select class="form-control entrada-rv" [disabled]="!tipoOperacionEUR" (focus)="activarFocusSelect('EUR')" (blur)="desactivarFocusSelect('EUR')">
+            <option *ngFor="let fecha of fechasEUR">{{ fecha.descripcion }}</option>
+          </select>
+        </div>
+        <div class="grupo-horizontal">
+          <label class="etiqueta-rv" [class.focus]="inputFocus.EUR">Recibo</label>
+          <div class="input-moneda" [class.focused]="inputFocus.EUR" [class.error]="errorMontoEUR">
+            <input
+              type="text"
+              class="entrada-rv"
+              placeholder="00.00"
+              inputmode="decimal"
+              [disabled]="tipoOperacionEUR !== 'compra'"
+              [value]="reciboEUR"
+              (focus)="limpiarInput($event, 'EUR'); activarFocus('EUR')"
+              (input)="actualizarRecibo('EUR', $event)"
+              (blur)="blurInput('EUR')"
+              (keypress)="validarInputNumerico($event)"
+            />
+            <span class="moneda"><strong>EUR</strong></span>
+          </div>
+        </div>
+        <div *ngIf="errorMontoEUR" class="mensaje-error">
+          El monto <strong>supera el límite máximo</strong> por operación
+        </div>
+        <div class="grupo-horizontal">
+          <label class="etiqueta-rv">Entrego</label>
+          <div class="input-moneda" [ngClass]="{'bg-gris': esInputGris('EUR', 'entrego')}">
+            <input
+              type="text"
+              class="entrada-rv"
+              inputmode="decimal"
+              [disabled]="true"
+              [value]="mostrarEntregoEUR ? entregoEUR : '00.00'"
+            />
+            <span class="moneda"><strong>MXN</strong></span>
+          </div>
+        </div>
+      </div>
+      <div class="acciones-panel">
+        <button *ngIf="reciboEUR && !mostrarConfirmacionEUR" class="btn-cotizar" (click)="cotizar('EUR')">Cotizar</button>
+        <div *ngIf="mostrarConfirmacionEUR" class="grupo-confirmacion">
+          <button class="btn-rechazar" (click)="rechazarCotizacion('EUR')">Rechazar</button>
+          <button class="btn-pactar">Pactar compra</button>
+        </div>
       </div>
     </div>
-    <div class="opcion-selector" [class.active]="tipoOperacionUSD === 'compra'" (click)="seleccionarOperacion('compra', 'USD')">
-      <div class="label-operacion" [class.texto-solo]="tipoOperacionUSD === 'venta'">
-        Yo compro <strong>USD</strong>
-      </div>
-      <div class="valor-operacion" *ngIf="tipoOperacionUSD !== 'venta'" [class.blanco]="tipoOperacionUSD === 'compra'">
-        <span class="valor-int">{{ tasaCompraUSDEntero }}</span>
-        <span class="valor-dec">{{ tasaCompraUSDDec }}</span>
-        <span class="flecha up"></span>
-      </div>
-    </div>
-  </div>
-  <div class="fecha-op">Fecha de Operación {{ fechaActual }}</div>
-  <div class="px-3 contenido-panel">
-    <div class="grupo-horizontal">
-      <label class="etiqueta-rv" [class.focus]="selectFocus.USD">Quiero liquidar</label>
-      <select class="form-control entrada-rv" [disabled]="!tipoOperacionUSD" (focus)="activarFocusSelect('USD')" (blur)="desactivarFocusSelect('USD')">
-        <option *ngFor="let fecha of fechasUSD">{{ fecha.descripcion }}</option>
+
+    <!-- Paneles 3 y 4 iguales -->
+    <div class="panel placeholder-panel">
+      <img src="assets/img/fxultra-logo.png" alt="FX Ultra" class="logo" />
+      <div class="icon-plus text-primary">+</div>
+      <select class="form-select mt-2">
+        <option value="">Selecciona par</option>
+        <option *ngFor="let par of paresDivisas" [disabled]="parDeshabilitado(par.descripcion)" [value]="par.descripcion">
+          {{ par.descripcion }}
+        </option>
       </select>
     </div>
-    <div class="grupo-horizontal">
-      <label class="etiqueta-rv" [class.focus]="inputFocus.USD">Recibo</label>
-      <div class="input-moneda" [class.focused]="inputFocus.USD">
-        <input
-          type="text"
-          class="entrada-rv"
-          placeholder="00.00"
-          inputmode="decimal"
-          [disabled]="tipoOperacionUSD !== 'compra'"
-          [value]="reciboUSD"
-          (focus)="limpiarInput($event, 'USD'); activarFocus('USD')"
-          (input)="actualizarRecibo('USD', $event)"
-          (blur)="blurInput('USD')"
-          (keypress)="validarInputNumerico($event)"
-        />
-        <span class="moneda"><strong>USD</strong></span>
-      </div>
-    </div>
-    <div class="grupo-horizontal">
-      <label class="etiqueta-rv">Entrego</label>
-      <div class="input-moneda" [ngClass]="{'bg-gris': esInputGris('USD', 'entrego')}">
-        <input
-          type="text"
-          class="entrada-rv"
-          inputmode="decimal"
-          [disabled]="true"
-          [value]="mostrarEntregoUSD ? entregoUSD : '00.00'"
-        />
-        <span class="moneda"><strong>MXN</strong></span>
-      </div>
-    </div>
-  </div>
-
-  <div class="acciones-panel">
-    <button *ngIf="reciboUSD && !mostrarConfirmacionUSD" class="btn-cotizar" (click)="cotizar('USD')">Cotizar</button>
-    <div *ngIf="mostrarConfirmacionUSD" class="grupo-confirmacion">
-      <button class="btn-rechazar" (click)="rechazarCotizacion('USD')">Rechazar</button>
-      <button class="btn-pactar">Pactar compra</button>
-    </div>
-  </div>
-</div>
-
-<!-- Panel EUR -->
-<div class="panel">
-  <div class="barra-superior">
-    <div class="tabs-container px-3">
-      <a class="nav-link active divisa-usd" href="#">EUR</a>
-      <div class="separador-tab"></div>
-      <a class="nav-link divisa-mxn" href="#">MXN</a>
-    </div>
-  </div>
-  <div class="selector-tipo-operacion">
-    <div class="opcion-selector" [class.active]="tipoOperacionEUR === 'venta'" (click)="seleccionarOperacion('venta', 'EUR')">
-      <div class="label-operacion" [class.texto-solo]="tipoOperacionEUR === 'compra'">
-        Yo vendo <strong>EUR</strong>
-      </div>
-      <div class="valor-operacion" *ngIf="tipoOperacionEUR !== 'compra'" [class.blanco]="tipoOperacionEUR === 'venta'">
-        <span class="flecha down"></span>
-        <span class="valor-int">{{ tasaVentaEUREntero }}</span>
-        <span class="valor-dec">{{ tasaVentaEURDec }}</span>
-      </div>
-    </div>
-    <div class="opcion-selector" [class.active]="tipoOperacionEUR === 'compra'" (click)="seleccionarOperacion('compra', 'EUR')">
-      <div class="label-operacion" [class.texto-solo]="tipoOperacionEUR === 'venta'">
-        Yo compro <strong>EUR</strong>
-      </div>
-      <div class="valor-operacion" *ngIf="tipoOperacionEUR !== 'venta'" [class.blanco]="tipoOperacionEUR === 'compra'">
-        <span class="valor-int">{{ tasaCompraEUREntero }}</span>
-        <span class="valor-dec">{{ tasaCompraEURDec }}</span>
-        <span class="flecha up"></span>
-      </div>
-    </div>
-  </div>
-  <div class="fecha-op">Fecha de Operación {{ fechaActual }}</div>
-  <div class="px-3 contenido-panel">
-    <div class="grupo-horizontal">
-      <label class="etiqueta-rv" [class.focus]="selectFocus.EUR">Quiero liquidar</label>
-      <select class="form-control entrada-rv" [disabled]="!tipoOperacionEUR" (focus)="activarFocusSelect('EUR')" (blur)="desactivarFocusSelect('EUR')">
-        <option *ngFor="let fecha of fechasEUR">{{ fecha.descripcion }}</option>
+    <div class="panel placeholder-panel">
+      <img src="assets/img/fxultra-logo.png" alt="FX Ultra" class="logo" />
+      <div class="icon-plus text-primary">+</div>
+      <select class="form-select mt-2">
+        <option value="">Selecciona par</option>
+        <option *ngFor="let par of paresDivisas" [disabled]="parDeshabilitado(par.descripcion)" [value]="par.descripcion">
+          {{ par.descripcion }}
+        </option>
       </select>
     </div>
-    <div class="grupo-horizontal">
-      <label class="etiqueta-rv" [class.focus]="inputFocus.EUR">Recibo</label>
-      <div class="input-moneda" [class.focused]="inputFocus.EUR">
-        <input
-          type="text"
-          class="entrada-rv"
-          placeholder="00.00"
-          inputmode="decimal"
-          [disabled]="tipoOperacionEUR !== 'compra'"
-          [value]="reciboEUR"
-          (focus)="limpiarInput($event, 'EUR'); activarFocus('EUR')"
-          (input)="actualizarRecibo('EUR', $event)"
-          (blur)="blurInput('EUR')"
-          (keypress)="validarInputNumerico($event)"
-        />
-        <span class="moneda"><strong>EUR</strong></span>
-      </div>
-    </div>
-    <div class="grupo-horizontal">
-      <label class="etiqueta-rv">Entrego</label>
-      <div class="input-moneda" [ngClass]="{'bg-gris': esInputGris('EUR', 'entrego')}">
-        <input
-          type="text"
-          class="entrada-rv"
-          inputmode="decimal"
-          [disabled]="true"
-          [value]="mostrarEntregoEUR ? entregoEUR : '00.00'"
-        />
-        <span class="moneda"><strong>MXN</strong></span>
-      </div>
-    </div>
-  </div>
 
-  <div class="acciones-panel">
-    <button *ngIf="reciboEUR && !mostrarConfirmacionEUR" class="btn-cotizar" (click)="cotizar('EUR')">Cotizar</button>
-    <div *ngIf="mostrarConfirmacionEUR" class="grupo-confirmacion">
-      <button class="btn-rechazar" (click)="rechazarCotizacion('EUR')">Rechazar</button>
-      <button class="btn-pactar">Pactar compra</button>
-    </div>
   </div>
-</div>
-
-<!-- Paneles 3 y 4 -->
-<div class="panel placeholder-panel">
-  <img src="assets/img/fxultra-logo.png" alt="FX Ultra" class="logo" />
-  <div class="icon-plus text-primary">+</div>
-  <select class="form-select mt-2">
-    <option value="">Selecciona par</option>
-    <option *ngFor="let par of paresDivisas" [disabled]="parDeshabilitado(par.descripcion)" [value]="par.descripcion">
-      {{ par.descripcion }}
-    </option>
-  </select>
-</div>
-<div class="panel placeholder-panel">
-  <img src="assets/img/fxultra-logo.png" alt="FX Ultra" class="logo" />
-  <div class="icon-plus text-primary">+</div>
-  <select class="form-select mt-2">
-    <option value="">Selecciona par</option>
-    <option *ngFor="let par of paresDivisas" [disabled]="parDeshabilitado(par.descripcion)" [value]="par.descripcion">
-      {{ par.descripcion }}
-    </option>
-  </select>
-</div>
 </div>

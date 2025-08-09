@@ -54,7 +54,6 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
   mostrarEntregoUSD: boolean = false;
   mostrarEntregoEUR: boolean = false;
 
-  // Tasas en tiempo real (modificadas por el simulador)
   tasaVentaUSD = 18.7019;
   tasaCompraUSD = 18.8249;
   tasaVentaEUR = 21.7793;
@@ -71,6 +70,11 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
 
   private simuladorInterval: any;
 
+  // Variables para validación de límite máximo
+  readonly LIMITE_MAXIMO = 5000000;
+  errorMontoUSD: boolean = false;
+  errorMontoEUR: boolean = false;
+
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
@@ -78,7 +82,6 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
     this.obtenerParesDivisas();
     this.procesarTasas();
 
-    // Simulación de fluctuación de divisa
     this.simuladorInterval = setInterval(() => {
       this.simularPreciosDivisas();
     }, 3000);
@@ -111,9 +114,7 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
     this.tasaCompraEURDec = eurCompra.dec;
   }
 
-  // Simula que los precios suben o bajan ligeramente cada 3 segundos
   simularPreciosDivisas() {
-    // Fluctuación aleatoria
     this.tasaVentaUSD = this.ajustarValor(this.tasaVentaUSD, 0.002);
     this.tasaCompraUSD = this.ajustarValor(this.tasaCompraUSD, 0.002);
     this.tasaVentaEUR = this.ajustarValor(this.tasaVentaEUR, 0.002);
@@ -134,7 +135,6 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
   ajustarValor(valor: number, delta: number): number {
     const cambio = (Math.random() - 0.5) * 2 * delta;
     let nuevo = valor + cambio;
-
     if (nuevo < 1) nuevo = 1 + Math.random() * 0.1;
     return Number(nuevo.toFixed(4));
   }
@@ -174,22 +174,19 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
       const mismaSeleccion = this.tipoOperacionUSD === operacion;
       this.tipoOperacionUSD = mismaSeleccion ? null : operacion;
       this.mostrarEntregoUSD = false;
-      if (mismaSeleccion || operacion === 'compra' || operacion === 'venta') {
-        this.reciboUSD = '';
-        this.entregoUSD = '';
-      }
+      this.reciboUSD = '';
+      this.entregoUSD = '';
       this.mostrarConfirmacionUSD = false;
+      this.errorMontoUSD = false;
     }
-
     if (divisa === 'EUR') {
       const mismaSeleccion = this.tipoOperacionEUR === operacion;
       this.tipoOperacionEUR = mismaSeleccion ? null : operacion;
       this.mostrarEntregoEUR = false;
-      if (mismaSeleccion || operacion === 'compra' || operacion === 'venta') {
-        this.reciboEUR = '';
-        this.entregoEUR = '';
-      }
+      this.reciboEUR = '';
+      this.entregoEUR = '';
       this.mostrarConfirmacionEUR = false;
+      this.errorMontoEUR = false;
     }
   }
 
@@ -204,11 +201,9 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
     const limpio = valor.replace(/[^\d.]/g, '');
     const partes = limpio.split('.');
     const enteros = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
     let decimales = partes[1] || '';
     if (decimales.length > 2) decimales = decimales.substring(0, 2);
     while (decimales.length < 2) decimales += '0';
-
     return `${enteros}.${decimales}`;
   }
 
@@ -227,18 +222,17 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
     const partes = raw.split('.');
     if (partes.length > 2) return;
 
-    const numero = parseFloat(partes[0] + '.' + (partes[1] || '0'));
-
     if (divisa === 'USD') {
       this.reciboUSD = raw;
       this.entregoUSD = '';
       this.mostrarEntregoUSD = false;
+      this.errorMontoUSD = false;
     }
-
     if (divisa === 'EUR') {
       this.reciboEUR = raw;
       this.entregoEUR = '';
       this.mostrarEntregoEUR = false;
+      this.errorMontoEUR = false;
     }
   }
 
@@ -253,11 +247,13 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
       this.reciboUSD = '';
       this.entregoUSD = '';
       this.mostrarEntregoUSD = false;
+      this.errorMontoUSD = false;
     }
     if (divisa === 'EUR') {
       this.reciboEUR = '';
       this.entregoEUR = '';
       this.mostrarEntregoEUR = false;
+      this.errorMontoEUR = false;
     }
   }
 
@@ -275,7 +271,6 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
 
   obtenerMontoEntregado(monto: number, divisa: Divisa): string {
     let resultado = 0;
-
     if (divisa === 'USD') {
       if (this.tipoOperacionUSD === 'compra') {
         resultado = monto * this.tasaCompraUSD;
@@ -283,7 +278,6 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
         resultado = monto * this.tasaVentaUSD;
       }
     }
-
     if (divisa === 'EUR') {
       if (this.tipoOperacionEUR === 'compra') {
         resultado = monto * this.tasaCompraEUR;
@@ -291,7 +285,6 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
         resultado = monto * this.tasaVentaEUR;
       }
     }
-
     return resultado.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
@@ -308,10 +301,8 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const key = event.key;
     const value = input.value;
-
     if (!/[\d.]/.test(key)) event.preventDefault();
     if (key === '.' && value.includes('.')) event.preventDefault();
-
     const cursorPos = input.selectionStart || 0;
     const partes = value.split('.');
     if (partes[1]?.length >= 2 && cursorPos > value.indexOf('.')) {
@@ -328,12 +319,22 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
   cotizar(divisa: Divisa): void {
     if (divisa === 'USD') {
       const monto = parseFloat((this.reciboUSD || '0').replace(/,/g, ''));
+      if (monto > this.LIMITE_MAXIMO) {
+        this.errorMontoUSD = true;
+        return;
+      }
+      this.errorMontoUSD = false;
       this.entregoUSD = monto > 0 ? this.obtenerMontoEntregado(monto, 'USD') : '00.00';
       this.mostrarConfirmacionUSD = true;
       this.mostrarEntregoUSD = true;
     }
     if (divisa === 'EUR') {
       const monto = parseFloat((this.reciboEUR || '0').replace(/,/g, ''));
+      if (monto > this.LIMITE_MAXIMO) {
+        this.errorMontoEUR = true;
+        return;
+      }
+      this.errorMontoEUR = false;
       this.entregoEUR = monto > 0 ? this.obtenerMontoEntregado(monto, 'EUR') : '00.00';
       this.mostrarConfirmacionEUR = true;
       this.mostrarEntregoEUR = true;
@@ -347,6 +348,7 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
       this.tipoOperacionUSD = null;
       this.mostrarConfirmacionUSD = false;
       this.mostrarEntregoUSD = false;
+      this.errorMontoUSD = false;
     }
     if (divisa === 'EUR') {
       this.reciboEUR = '';
@@ -354,6 +356,7 @@ export class CompraVentaComponent implements OnInit, OnDestroy {
       this.tipoOperacionEUR = null;
       this.mostrarConfirmacionEUR = false;
       this.mostrarEntregoEUR = false;
+      this.errorMontoEUR = false;
     }
   }
 
